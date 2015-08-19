@@ -279,9 +279,9 @@ do j = 1, n
    f(j) = -kosc(j)*x(j) - 2d0*c2(j)*(rm(3)**2 + pm(3)**2 - 1d0)
 end do
 
-end subroutine get_traceless_force_bath
+end subroutine get_force_bath
 
-subroutine get_force_bath(kosc,x,c2,rm,pm,f)
+subroutine get_traceless_force_bath(kosc,x,c2,rm,pm,f)
 implicit none
 
 integer :: j,n
