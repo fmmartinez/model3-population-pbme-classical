@@ -14,7 +14,7 @@ logical :: overflowcheck
 
 real(8) :: delta,ome_max,dt,lumda_d,eg,eb,ed,mu,e0,beta,time_j,taw_j,omega_j,check
 real(8) :: dt2,uj,qbeta,coeff,lambdacheck,a1,a2,et,fact1,fact2,fact3,gaussian,rtemp
-real(8) :: pc,qc,av1,av2,fc,fc1,fc2
+real(8) :: pc,qc,av1,av2,fc,fc1,fc2,hmtrace
 real(8),dimension(1:3) :: rm,pm
 real(8),dimension(1:3,1:3) :: hm
 real(8),dimension(:),allocatable :: ome,c2,kosc,pop,pop1,pop2,pop3,x,p,fx,facn,popt,pop1t,pop2t,pop3t
@@ -79,8 +79,8 @@ MC: do mcs = 1, nmcs
  
    coeff = rm(1)**2 + pm(1)**2 - 0.5d0
 
-   call get_force_bath(kosc,x,c2,rm,pm,fx)
-   call get_force_coupledosc(oc,qc,kc,rm,pm,fc1,fc2)
+   call get_traceless_force_bath(kosc,x,c2,rm,pm,fx)
+   call get_traceless_force_coupledosc(oc,qc,kc,rm,pm,fc1,fc2)
    
    ib = 1
 
@@ -114,6 +114,7 @@ MC: do mcs = 1, nmcs
       pc = pc + dt2*(fc1+fc2)
       
       call get_hm(delta,mu,et,a1,a2,av1,av2,pc,oc,qc,hm)
+      call make_hm_traceless(hm,hmtrace)
       
       call evolve_pm(nmap,dt2,hm,rm,pm)
 
@@ -129,13 +130,14 @@ MC: do mcs = 1, nmcs
       av2 = 2.d0*kc*qc 
 
       call update_hm(a1,a2,av1,av2,pc,oc,qc,hm)
+      call make_hm_traceless(hm,hmtrace)
 
       call evolve_rm(nmap,dt,hm,pm,rm)
 
       call evolve_pm(nmap,dt2,hm,rm,pm)
 
-      call get_force_bath(kosc,x,c2,rm,pm,fx)
-      call get_force_coupledosc(oc,qc,kc,rm,pm,fc1,fc2) 
+      call get_traceless_force_bath(kosc,x,c2,rm,pm,fx)
+      call get_traceless_force_coupledosc(oc,qc,kc,rm,pm,fc1,fc2) 
 
       do is = 1, nosc
          p(is) = p(is) + dt2*fx(is)
@@ -277,7 +279,26 @@ do j = 1, n
    f(j) = -kosc(j)*x(j) - 2d0*c2(j)*(rm(3)**2 + pm(3)**2 - 1d0)
 end do
 
-end subroutine get_force_bath
+end subroutine get_traceless_force_bath
+
+subroutine get_force_bath(kosc,x,c2,rm,pm,f)
+implicit none
+
+integer :: j,n
+
+real(8) :: trace
+real(8),dimension(:),intent(in) :: kosc,x,c2,rm,pm
+real(8),dimension(:),intent(out) :: f
+
+n = size(x)
+
+f = 0d0
+do j = 1, n
+   trace = -2d0*c2(j)/3d0
+   f(j) = -kosc(j)*x(j) - trace*(rm(1)**2 + pm(1)**2 + rm(2)**2 + pm(2)**2 - 2d0*rm(3)**2 - 2d0*pm(3)**2 - 1d0)
+end do
+
+end subroutine get_traceless_force_bath
 
 subroutine get_force_coupledosc(oc,qc,kc,rm,pm,f1,f2)
 
@@ -294,6 +315,17 @@ f1 = -oc**2*qc
 f2 = kc*(2d0*(rm(2)**2+pm(2)**2-1d0) + (rm(3)**2+pm(3)**2-1d0))
 
 end subroutine get_force_coupledosc
+
+subroutine get_traceless_force_coupledosc(oc,qc,kc,rm,pm,f1,f2)
+
+real(8),intent(in) :: oc,qc,kc
+real(8),intent(in),dimension(:) :: rm,pm
+real(8),intent(out) :: f1,f2
+
+f1 = -oc**2*qc + kc
+f2 = kc*((rm(2)**2+pm(2)**2-1d0) + (rm(1)**2+pm(1)**2-1d0))
+
+end subroutine get_traceless_force_coupledosc
 
 subroutine update_hm(a1,a2,av1,av2,pc,oc,qc,hm)
 implicit none
@@ -351,6 +383,18 @@ hm(3,2) = hm(2,3)
 hm(3,3) = ed + ev + a1 + a2 + 0.25d0*av1 - 0.5d0*av2
 
 end subroutine get_hm
+
+subroutine make_hm_traceless(hm,trace)
+implicit none
+
+real(8),intent(inout) :: trace
+real(8),dimension(:,:),intent(inout) :: hm
+
+trace = hm(1,1) + hm(2,2) + hm(3,3)
+hm(1,1) = hm(1,1) - trace/3d0
+hm(2,2) = hm(2,2) - trace/3d0
+hm(3,3) = hm(3,3) - trace/3d0
+end subroutine make_hm_traceless
 
 subroutine iniconc()
 implicit none
