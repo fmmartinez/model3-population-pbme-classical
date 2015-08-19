@@ -11,10 +11,10 @@ integer :: np,nosc,nmcs,nmds,seed_dimension,bath,init,mcs,it,is,ib
 
 real(8) :: delta,ome_max,dt,lumda_d,eg,eb,ed,mu,e0,beta,time_j,taw_j,omega_j,check
 real(8) :: dt2,uj,qbeta,coeff,lambdacheck,a1,a2,et,fact1,fact2,fact3,gaussian,rtemp
-real(8) :: pc,qc,av1,av2,fc
+real(8) :: pc,qc,av1,av2,fc,fc1,fc2
 real(8),dimension(1:3) :: rm,pm
 real(8),dimension(1:3,1:3) :: hm
-real(8),dimension(:),allocatable :: ome,c2,kosc,pop,pop1,pop2,pop3,x,p,fx,facn,popt
+real(8),dimension(:),allocatable :: ome,c2,kosc,pop,pop1,pop2,pop3,x,p,fx,facn,popt,pop1t,pop2t,pop3t
 real(8),dimension(:,:),allocatable :: popn
 
 call iniconc()
@@ -25,8 +25,9 @@ allocate(ome(1:nosc),c2(1:nosc),kosc(1:nosc))
 
 call iniconq_d()
 
-allocate(popn(1:nmds+1,1:nmap),facn(1:nmap),popt(1:nmds+1))
+allocate(popn(1:nmds+1,1:nmap),facn(1:nmap))
 allocate(pop(1:nmds+1),pop1(1:nmds+1),pop2(1:nmds+1),pop3(1:nmds+1))
+allocate(popt(1:nmds+1),pop1t(1:nmds+1),pop2t(1:nmds+1),pop3t(1:nmds+1))
 allocate(x(1:nosc),p(1:nosc),fx(1:nosc))
 
 popn = 0d0
@@ -56,7 +57,6 @@ MC: do mcs = 1, nmcs
    qbeta = beta/(uj/tanh(uj))
    pc = gauss_noise2()/dsqrt(qbeta)
    qc = gauss_noise2()/dsqrt(qbeta*oc**2)
-
 !sampling mapping variables
    if (init == 3) then
       do i = 1, nmap
@@ -71,7 +71,7 @@ MC: do mcs = 1, nmcs
    coeff = rm(1)**2 + pm(1)**2 - 0.5d0
 
    call get_force_bath(kosc,x,c2,rm,pm,fx)
-   call get_force_coupledosc(oc,qc,kc,rm,pm,fc)
+   call get_force_coupledosc(oc,qc,kc,rm,pm,fc1,fc2)
    
    ib = 1
 
@@ -92,14 +92,17 @@ MC: do mcs = 1, nmcs
    av1 = 2.d0*kc**2/oc**2
    av2 = 2.d0*kc*qc
    
+   print *, mcs, qc, pc
    MD: do it = 1, nmds
+   if (mcs == 1) write (335,'(i5,4f20.6)') it, qc, pc, fc1, fc2
+   if (mcs == 2) write (336,'(i5,6f20.6)') it, rm, pm
       gaussian=sqrt(4.d0*log(2.d0)/(pi*taw_j**2))*exp(-4.d0*log(2.d0)*((it-0.5d0)*dt-time_j)**2/(taw_j**2))
       et = gaussian*e0*cos(omega_j*((it-0.5d0)*dt-time_j))
    
       do is = 1, nosc
          p(is) = p(is) + dt2*fx(is)
       end do
-      pc = pc + dt2*fc
+      pc = pc + dt2*(fc1+fc2)
       
       call get_hm(delta,mu,et,a1,a2,av1,av2,pc,oc,qc,hm)
       
@@ -123,12 +126,12 @@ MC: do mcs = 1, nmcs
       call evolve_pm(nmap,dt2,hm,rm,pm)
 
       call get_force_bath(kosc,x,c2,rm,pm,fx)
-      call get_force_coupledosc(oc,qc,kc,rm,pm,fc) 
+      call get_force_coupledosc(oc,qc,kc,rm,pm,fc1,fc2) 
 
       do is = 1, nosc
          p(is) = p(is) + dt2*fx(is)
       end do
-      pc = pc + dt2*fc
+      pc = pc + dt2*(fc1+fc2)
 
       ib = it + 1
       
@@ -138,6 +141,15 @@ MC: do mcs = 1, nmcs
       pop1(ib) = pop1(ib) + (fact1)
       pop2(ib) = pop2(ib) + (fact2)
       pop3(ib) = pop3(ib) + (fact3)
+
+      if (pop(ib) /= pop(ib)) then
+         print *, it, qc
+         print *, hm
+         print *, rm
+         print *, pm
+         print *, mcs
+         stop
+      end if
    end do MD
 
 
@@ -241,20 +253,24 @@ n = size(x)
 
 f = 0d0
 do j = 1, n
-   f(j) = -kosc(j)*x(j) - c2(j)*(rm(3)**2 + pm(3)**2 - 1d0)
+   f(j) = -kosc(j)*x(j) - 2d0*c2(j)*(rm(3)**2 + pm(3)**2 - 1d0)
 end do
 
 end subroutine get_force_bath
 
-subroutine get_force_coupledosc(oc,qc,kc,rm,pm,f)
+subroutine get_force_coupledosc(oc,qc,kc,rm,pm,f1,f2)
 
 real(8),intent(in) :: oc,qc,kc
 real(8),intent(in),dimension(:) :: rm,pm
-real(8),intent(out) :: f
+real(8),intent(out) :: f1,f2
 
-f = - (oc**2*qc)*(rm(1)**2 + pm(1)**2 - 1d0)
-f = f - (oc**2*qc - 2d0*kc)*(rm(2)**2 + pm(2)**2 - 1d0)
-f = f - (oc**2*qc - kc)*(rm(3)**2 + pm(3)**2 - 1d0)
+!f1 = (-oc**2*qc)*(rm(1)**2+rm(2)**2+rm(3)**2+pm(1)**2+pm(2)**2+pm(3)**2-3d0) 
+!f2 = (rm(1)**2 + pm(1)**2 - 1d0)
+!f2 = f2 + (2d0*kc)*(rm(2)**2 + pm(2)**2 - 1d0)
+!f2 = f2 + (kc)*(rm(3)**2 + pm(3)**2 - 1d0)
+
+f1 = -oc**2*qc
+f2 = kc*(2d0*(rm(2)**2+pm(2)**2-1d0) + (rm(3)**2+pm(3)**2-1d0))
 
 end subroutine get_force_coupledosc
 
