@@ -4,7 +4,7 @@ implicit none
 
 integer,parameter :: nmap = 3
 
-real(8),parameter :: pi=3.1415926535d0, oc=6d0, kc=18.97d0
+real(8),parameter :: pi=3.1415926535d0, oc=37.7d0, kc=sqrt(10d0)*oc
 
 integer :: i,j,ng,nb,nd,basispc,stp,cont
 integer :: np,nosc,nmcs,nmds,seed_dimension,bath,init,mcs,it,is,ib
@@ -265,7 +265,7 @@ end subroutine get_force_coupledosc
 subroutine update_hm(a1,a2,av1,av2,pc,oc,qc,hm)
 implicit none
 
-real(8),parameter :: eg=0, eb=260, ed=260
+real(8),parameter :: eg=0, eb=240, ed=240
 
 real(8) :: ev
 real(8),intent(in) :: a1,a2,av1,av2,pc,oc,qc
@@ -289,7 +289,7 @@ end subroutine update_hm
 subroutine get_hm(delta,mu,et,a1,a2,av1,av2,pc,oc,qc,hm)
 implicit none
 
-real(8),parameter :: eg=0, eb=260, ed=260
+real(8),parameter :: eg=0, eb=240, ed=240
 
 real(8) :: ev
 real(8),intent(in) :: delta,mu,et,a1,a2,pc,oc,qc,av1,av2
