@@ -8,6 +8,9 @@ real(8),parameter :: pi=3.1415926535d0, oc=37.7d0, kc=sqrt(10d0)*oc
 
 integer :: i,j,ng,nb,nd,basispc,stp,cont
 integer :: np,nosc,nmcs,nmds,seed_dimension,bath,init,mcs,it,is,ib
+integer :: overflow
+
+logical :: overflowcheck
 
 real(8) :: delta,ome_max,dt,lumda_d,eg,eb,ed,mu,e0,beta,time_j,taw_j,omega_j,check
 real(8) :: dt2,uj,qbeta,coeff,lambdacheck,a1,a2,et,fact1,fact2,fact3,gaussian,rtemp
@@ -35,10 +38,16 @@ pop  = 0d0
 pop1 = 0d0
 pop2 = 0d0
 pop3 = 0d0
+popt  = 0d0
+pop1t = 0d0
+pop2t = 0d0
+pop3t = 0d0
 
 dt  = 2d0*pi*dt
 dt2 = 0.5d0*dt
 
+overflow = 0
+overflowcheck = .false.
 MC: do mcs = 1, nmcs
 !sampling bath oscillators
    do is=1,nosc
@@ -77,10 +86,10 @@ MC: do mcs = 1, nmcs
 
    call get_facts_pop(coeff,rm,pm,fact1,fact2,fact3)
    
-   pop(ib)  = pop(ib)  + (fact1+fact2+fact3)
-   pop1(ib) = pop1(ib) + (fact1)
-   pop2(ib) = pop2(ib) + (fact2)
-   pop3(ib) = pop3(ib) + (fact3)
+   popt(ib)  = (fact1+fact2+fact3)
+   pop1t(ib) = (fact1)
+   pop2t(ib) = (fact2)
+   pop3t(ib) = (fact3)
    
    a1 = 0d0
    a2 = 0d0
@@ -137,21 +146,31 @@ MC: do mcs = 1, nmcs
       
       call get_facts_pop(coeff,rm,pm,fact1,fact2,fact3)
       
-      pop(ib)  = pop(ib)  + (fact1+fact2+fact3)
-      pop1(ib) = pop1(ib) + (fact1)
-      pop2(ib) = pop2(ib) + (fact2)
-      pop3(ib) = pop3(ib) + (fact3)
+      popt(ib)  = (fact1+fact2+fact3)
+      pop1t(ib) = (fact1)
+      pop2t(ib) = (fact2)
+      pop3t(ib) = (fact3)
 
-      if (pop(ib) /= pop(ib)) then
+      if ((popt(ib) /= popt(ib)).or.(popt(ib)-1 == popt(ib))) then
          print *, it, qc
          print *, hm
          print *, rm
          print *, pm
-         print *, mcs
-         stop
+         print *, 'overflow occurred at', mcs
+         overflow = overflow + 1
+         overflowcheck = .true.
+         exit
       end if
    end do MD
 
+   if (overflowcheck == .false.) then
+      pop = pop + popt
+      pop1 = pop1 + pop1t
+      pop2 = pop2 + pop2t
+      pop3 = pop3 + pop3t
+   else
+      overflowcheck = .false.
+   end if
 
    if (mod(mcs,1000) == 0) then
       open(444,file='temp.out')
@@ -168,6 +187,8 @@ do ib = 1, nmds+1
    pop3(ib) = pop3(ib)/pop(ib)
    write(333,'(i10,4f20.9)') ib-1, pop1(ib),pop2(ib),pop3(ib),pop(ib)!/dnmcs
 end do
+
+print *, 'MC cycles', nmcs, 'with', overflow, 'overflows'
 
 deallocate(ome,c2,kosc)
 deallocate(pop,pop1,pop2,pop3)
