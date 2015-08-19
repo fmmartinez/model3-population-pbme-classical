@@ -252,13 +252,9 @@ real(8),intent(in) :: oc,qc,kc
 real(8),intent(in),dimension(:) :: rm,pm
 real(8),intent(out) :: f
 
-!f = 0d0
-!f = f - (oc**2*qc)*(rm(1)**2 + pm(1)**2 - 1d0)
-!f = f - (oc**2*qc - 2d0*kc)*(rm(2)**2 + pm(2)**2 - 1d0)
-!f = f - (oc**2*qc - kc)*(rm(3)**2 + pm(3)**2 - 1d0)
-f = -oc**2*qc
-f = f + 2*kc*(rm(2)**2 + pm(2)**2 - 1d0) 
-f = f + kc*(rm(3)**2 + pm(3)**2 - 1d0)
+f = - (oc**2*qc)*(rm(1)**2 + pm(1)**2 - 1d0)
+f = f - (oc**2*qc - 2d0*kc)*(rm(2)**2 + pm(2)**2 - 1d0)
+f = f - (oc**2*qc - kc)*(rm(3)**2 + pm(3)**2 - 1d0)
 
 end subroutine get_force_coupledosc
 
