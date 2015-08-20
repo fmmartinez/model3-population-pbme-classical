@@ -276,7 +276,7 @@ n = size(x)
 
 f = 0d0
 do j = 1, n
-   f(j) = -kosc(j)*x(j) - 2d0*c2(j)*(rm(3)**2 + pm(3)**2 - 1d0)
+   f(j) = -kosc(j)*x(j) - c2(j)*(rm(3)**2 + pm(3)**2 - 1d0)
 end do
 
 end subroutine get_force_bath
@@ -295,7 +295,7 @@ n = size(x)
 f = 0d0
 do j = 1, n
    trace = -2d0*c2(j)/3d0
-   f(j) = -kosc(j)*x(j) - trace*(rm(1)**2 + pm(1)**2 + rm(2)**2 + pm(2)**2 - 2d0*rm(3)**2 - 2d0*pm(3)**2 - 1d0)
+   f(j) = -kosc(j)*x(j) - trace*(0.5d0*(rm(1)**2 + pm(1)**2 + rm(2)**2 + pm(2)**2 - 2d0*rm(3)**2 - 2d0*pm(3)**2) - 1d0)
 end do
 
 end subroutine get_traceless_force_bath
