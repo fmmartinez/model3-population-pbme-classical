@@ -7,14 +7,14 @@ integer,parameter :: nmap = 3
 real(8),parameter :: pi=3.1415926535d0, oc=37.7d0, kc=sqrt(10d0)*oc
 
 integer :: i,j,ng,nb,nd,basispc,stp,cont
-integer :: np,nosc,nmcs,nmds,seed_dimension,bath,init,mcs,it,is,ib
+integer :: np,nosc,nmcs,nmds,seed_dimension,bath,init,mcs,it,is,ib,ie,je
 integer :: overflow
 
 logical :: overflowcheck
 
 real(8) :: delta,ome_max,dt,lumda_d,eg,eb,ed,mu,e0,beta,time_j,taw_j,omega_j,check
 real(8) :: dt2,uj,qbeta,coeff,lambdacheck,a1,a2,et,fact1,fact2,fact3,gaussian,rtemp
-real(8) :: pc,qc,av1,av2,fc,fc1,fc2,hmtrace
+real(8) :: pc,qc,av1,av2,fc,fc1,fc2,hmtrace,etotal,eclas,equan
 real(8),dimension(1:3) :: rm,pm
 real(8),dimension(1:3,1:3) :: hm
 real(8),dimension(:),allocatable :: ome,c2,kosc,pop,pop1,pop2,pop3,x,p,fx,facn,popt,pop1t,pop2t,pop3t
@@ -163,6 +163,25 @@ MC: do mcs = 1, nmcs
          overflowcheck = .true.
          exit
       end if
+
+!      if (mcs == 3) then
+!         etotal = 0d0
+!         do is = 1, nosc
+!            etotal = 0.5d0*(p(is)**2 + kosc(is)*x(is)**2)
+!         end do
+!         eclas = etotal
+!         etotal = etotal + hmtrace/3d0
+!         do ie = 1, 3
+!            do je = 1, 3
+!               etotal = etotal + 0.5d0*hm(ie,je)*(pm(ie)*pm(je) + rm(ie)*rm(je))
+!            end do
+!         end do
+!         equan = etotal - hmtrace/3d0 - eclas
+!         write(69,'(i5,4f20.12)') it,eclas,hmtrace/3d0,equan,etotal
+!         write(70,'(i5,9f20.12)') it, hm
+!         write(71,'(i5,6f20.12)') it, rm, pm
+!         if (it == nmds) stop
+!      end if
    end do MD
 
    if (overflowcheck == .false.) then
