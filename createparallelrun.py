@@ -57,7 +57,7 @@ for i in range(0,nproc):
 m.append('#!/bin/bash -l\r\n')
 m.append('#PBS -S /bin/bash\r\n')
 m.append('#PBS -N pbme\r\n')
-m.append('#PBS -l walltime=100:00:00\r\n')
+m.append('#PBS -l walltime=1:00:00\r\n')
 m.append('cd $PBS_O_WORKDIR\r\n')
 m.append('time ./a.out < md.in\r\n')
 
