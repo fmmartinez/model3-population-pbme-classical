@@ -129,7 +129,7 @@ MC: do mcs = 1, nmcs
       end do
       av2 = 2.d0*kc*qc 
 
-      call get_hm(a1,a2,av1,av2,pc,oc,qc,hm)
+      call get_hm(delta,mu,et,a1,a2,av1,av2,pc,oc,qc,hm)
       call make_hm_traceless(hm,hmtrace)
 
       call evolve_rm(nmap,dt,hm,pm,rm)
