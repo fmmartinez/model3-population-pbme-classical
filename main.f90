@@ -101,10 +101,10 @@ MC: do mcs = 1, nmcs
    av1 = 2.d0*kc**2/oc**2
    av2 = 2.d0*kc*qc
    
-   print *, mcs, qc, pc
+   !print *, mcs, qc, pc
    MD: do it = 1, nmds
-   if (mcs == 1) write (335,'(i5,4f20.6)') it, qc, pc, fc1, fc2
-   if (mcs == 2) write (336,'(i5,6f20.6)') it, rm, pm
+   !if (mcs == 1) write (335,'(i5,4f20.6)') it, qc, pc, fc1, fc2
+   !if (mcs == 2) write (336,'(i5,6f20.6)') it, rm, pm
       gaussian=sqrt(4.d0*log(2.d0)/(pi*taw_j**2))*exp(-4.d0*log(2.d0)*((it-0.5d0)*dt-time_j)**2/(taw_j**2))
       et = gaussian*e0*cos(omega_j*((it-0.5d0)*dt-time_j))
    
@@ -164,24 +164,24 @@ MC: do mcs = 1, nmcs
          exit
       end if
 
-!      if (mcs == 3) then
-!         etotal = 0d0
-!         do is = 1, nosc
-!            etotal = 0.5d0*(p(is)**2 + kosc(is)*x(is)**2)
-!         end do
-!         eclas = etotal
-!         etotal = etotal + hmtrace/3d0
-!         do ie = 1, 3
-!            do je = 1, 3
-!               etotal = etotal + 0.5d0*hm(ie,je)*(pm(ie)*pm(je) + rm(ie)*rm(je))
-!            end do
-!         end do
-!         equan = etotal - hmtrace/3d0 - eclas
-!         write(69,'(i5,4f20.12)') it,eclas,hmtrace/3d0,equan,etotal
+      if (mcs == nmcs) then
+         etotal = 0d0
+         do is = 1, nosc
+            etotal = 0.5d0*(p(is)**2 + kosc(is)*x(is)**2)
+         end do
+         eclas = etotal
+         etotal = etotal + hmtrace/3d0
+         do ie = 1, 3
+            do je = 1, 3
+               etotal = etotal + 0.5d0*hm(ie,je)*(pm(ie)*pm(je) + rm(ie)*rm(je))
+            end do
+         end do
+         equan = etotal - hmtrace/3d0 - eclas
+         write(69,'(i5,4f20.12)') it,eclas,hmtrace/3d0,equan,etotal
 !         write(70,'(i5,9f20.12)') it, hm
 !         write(71,'(i5,6f20.12)') it, rm, pm
 !         if (it == nmds) stop
-!      end if
+      end if
    end do MD
 
    if (overflowcheck == .false.) then
