@@ -342,7 +342,7 @@ real(8),intent(in),dimension(:) :: rm,pm
 real(8),intent(out) :: f1,f2
 
 f1 = -oc**2*qc + kc
-f2 = kc*((rm(2)**2+pm(2)**2-1d0) + (rm(1)**2+pm(1)**2-1d0))
+f2 = kc*((rm(2)**2+pm(2)**2-1d0) - (rm(1)**2+pm(1)**2-1d0))
 
 end subroutine get_traceless_force_coupledosc
 
